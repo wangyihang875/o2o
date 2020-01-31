@@ -40,6 +40,8 @@ class ShopManagementController {
     @ResponseBody
     private Map<String, Object> registerShop(HttpServletRequest request){
         Map<String,Object> modelMap = new HashMap<String,Object>();
+        String shopStr = HttpServletRequestUtil.getString(request,"shopStr");
+        System.out.println("####="+shopStr);
         if (!CodeUtil.checkVerifyCode(request)) {
             modelMap.put("success", false);
             modelMap.put("errMsg", "验证码错误");
@@ -47,7 +49,6 @@ class ShopManagementController {
         }
 
         //1.接收并转化相应的参数，包括店铺信息以及图片信息
-        String shopStr = HttpServletRequestUtil.getString(request,"shopStr");
         ObjectMapper mapper = new ObjectMapper();
         Shop shop = null;
         try{
