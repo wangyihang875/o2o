@@ -30,15 +30,15 @@ public class ShopDaoTest extends BaseTest {
 		shop.setOwner(owner);
 		shop.setArea(area);
 		shop.setShopCategory(sc);
-		shop.setShopName("mytest1");
-		shop.setShopDesc("mytest1");
-		shop.setShopAddr("testaddr1");
-		shop.setPhone("13584565818");
-		shop.setShopImg("test1");
+		shop.setShopName("mytest3");
+		shop.setShopDesc("mytest3");
+		shop.setShopAddr("testaddr3");
+		shop.setPhone("13555555555");
+		shop.setShopImg("test3");
 		shop.setCreateTime(new Date());
 		shop.setLastEditTime(new Date());
 		shop.setEnableStatus(0);
-		shop.setAdvice("审核中");
+		shop.setAdvice("嘿嘿嘿");
 		int effectedNum = shopDao.insertShop(shop);
 		assertEquals(1, effectedNum);
 	}
