@@ -19,7 +19,6 @@ public class ImageUtil {
 
     //CommonsMultipartFile是spring自带的文件处理对象
     public static String generateThumbnail(CommonsMultipartFile thumbnail, String targetAddr) {
-        System.out.println("############"+basePath);
         String realFileName = FileUtil.getRandomFileName();//随机名
         String extension = getFileExtension(thumbnail);//扩展名
         makeDirPath(targetAddr);

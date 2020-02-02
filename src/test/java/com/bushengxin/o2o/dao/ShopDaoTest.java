@@ -8,8 +8,10 @@ import com.bushengxin.o2o.entity.ShopCategory;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.omg.CORBA.OBJ_ADAPTER;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Date;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -52,5 +54,15 @@ public class ShopDaoTest extends BaseTest {
 		shop.setLastEditTime(new Date());
 		int effectedNum = shopDao.updateShop(shop);
 		assertEquals(1, effectedNum);
+	}
+
+	@Test
+	public void testQueryByShopId(){
+		Shop shop = shopDao.queryByShopId(11L);
+		System.out.println("areaId:"+shop.getArea().getAreaId());
+		System.out.println("areaName:"+shop.getArea().getAreaName());
+		System.out.println("ownerId:"+shop.getOwner().getUserId());
+		System.out.println("ownerName:"+shop.getOwner().getName());
+
 	}
 }

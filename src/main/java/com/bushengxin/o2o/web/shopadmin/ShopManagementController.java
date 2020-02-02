@@ -22,6 +22,7 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,12 +37,12 @@ class ShopManagementController {
     private ShopCategoryService shopCategoryService;
     @Autowired
     private AreaService areaService;
+
     @RequestMapping(value = "registershop",method = RequestMethod.POST)
     @ResponseBody
     private Map<String, Object> registerShop(HttpServletRequest request){
         Map<String,Object> modelMap = new HashMap<String,Object>();
         String shopStr = HttpServletRequestUtil.getString(request,"shopStr");
-        System.out.println("####="+shopStr);
         if (!CodeUtil.checkVerifyCode(request)) {
             modelMap.put("success", false);
             modelMap.put("errMsg", "验证码错误");
@@ -73,19 +74,23 @@ class ShopManagementController {
         //2.注册店铺
         if (shop != null && shopImg != null) {
             try {
-//                PersonInfo user = (PersonInfo) request.getSession()
-//                        .getAttribute("user");
-//                shop.setOwnerId(user.getUserId());
-                PersonInfo owner = new PersonInfo();
-                owner.setUserId(1L);
+                /*
+                 * 服务器会为每个用户浏览器创建一个session对象（一个浏览器独占一个session对象）
+                 * 因此在需要保存用户数据时，服务器程序可以把用户信息写到用户独占的session对象中，当用户使用浏览器访问服务器程序时，
+                 * 服务器程序可以从用户的session对象中取出该用户的数据为用户服务，服务器创建session出来后，会把session的id号以cookie的
+                 * 形式回写给客户机，这样只要客户端的浏览器不关再去访问服务器的时候都会带着session的id，服务器发现用户带着session的id过来
+                 * 就会使用内容中与之对应的session为之服务，session有过期时间，tomcat默认的为30min
+                 * */
+
+                //登录时将用户信息写入session
+                PersonInfo owner = (PersonInfo) request.getSession().getAttribute("user");
                 shop.setOwner(owner);
                 ShopExecution se = shopService.addShop(shop, shopImg);
                 if (se.getState() == ShopStateEnum.CHECK.getState()) {
                     modelMap.put("success", true);
+                    //由于一个owner可以创建多个店铺，所以需要在session中存放一个session列表，显示用户可以操作的店铺
                     // 若shop创建成功，则加入session中，作为权限使用
-                    @SuppressWarnings("unchecked")
-                    List<Shop> shopList = (List<Shop>) request.getSession()
-                            .getAttribute("shopList");
+                    List<Shop> shopList = (List<Shop>) request.getSession().getAttribute("shopList");
                     if (shopList != null && shopList.size() > 0) {
                         shopList.add(se.getShop());
                         request.getSession().setAttribute("shopList", shopList);
@@ -131,7 +136,96 @@ class ShopManagementController {
             modelMap.put("success",false);
             modelMap.put("errMsg",e.getMessage());
         }
+        return modelMap;
+    }
 
+    @RequestMapping(value = "/getshopbyid",method = RequestMethod.GET)
+    @ResponseBody
+    private Map<String,Object> getShopById(HttpServletRequest request){
+        Map<String,Object> modelMap = new HashMap<String,Object>();
+        Long shopId = HttpServletRequestUtil.getLong(request,"shopId");
+        Shop shop = null;
+        try {
+            if(shopId > -1){
+                shop = shopService.getByShopId(shopId);
+                List<Area> areaList = areaService.getAreaList();
+                modelMap.put("shop",shop);
+                modelMap.put("areaList",areaList);
+                modelMap.put("success",true);
+            }else{
+                modelMap.put("success",false);
+                modelMap.put("errMsg","shopId不能为空");
+            }
+        }catch (Exception e){
+            modelMap.put("success",false);
+            modelMap.put("errMsg",e.getMessage());
+        }
+        return modelMap;
+    }
+
+    @RequestMapping(value = "modifyshop",method = RequestMethod.POST)
+    @ResponseBody
+    private Map<String, Object> modifyShop(HttpServletRequest request){
+        Map<String,Object> modelMap = new HashMap<String,Object>();
+        String shopStr = HttpServletRequestUtil.getString(request,"shopStr");
+        if (!CodeUtil.checkVerifyCode(request)) {
+            modelMap.put("success", false);
+            modelMap.put("errMsg", "验证码错误");
+            return modelMap;
+        }
+
+        //1.接收并转化相应的参数，包括店铺信息以及图片信息
+        ObjectMapper mapper = new ObjectMapper();
+        Shop shop = null;
+        try{
+            shop = mapper.readValue(shopStr,Shop.class);
+        }catch (Exception e){
+            modelMap.put("success",false);
+            modelMap.put("errMsg",e.getMessage());
+            return modelMap;
+        }
+
+        MultipartHttpServletRequest multipartRequest = null;
+        CommonsMultipartFile shopImg = null;
+        CommonsMultipartResolver commonsMultipartResolver = new CommonsMultipartResolver(request.getSession().getServletContext());
+        if (commonsMultipartResolver.isMultipart(request)) {
+            multipartRequest = (MultipartHttpServletRequest) request;
+            shopImg = (CommonsMultipartFile) multipartRequest.getFile("shopImg");
+        }
+
+        //2.修改店铺
+        if (shop != null && shop.getShopId() != null) {
+            try {
+                ShopExecution se = shopService.modifyShop(shop, shopImg);
+                if (se.getState() == ShopStateEnum.SUCCESS.getState()) {
+                    modelMap.put("success", true);
+                    /*// 若shop创建成功，则加入session中，作为权限使用
+                    @SuppressWarnings("unchecked")
+                    List<Shop> shopList = (List<Shop>) request.getSession()
+                            .getAttribute("shopList");
+                    if (shopList != null && shopList.size() > 0) {
+                        shopList.add(se.getShop());
+                        request.getSession().setAttribute("shopList", shopList);
+                    } else {
+                        shopList = new ArrayList<Shop>();
+                        shopList.add(se.getShop());
+                        request.getSession().setAttribute("shopList", shopList);
+                    }*/
+                } else {
+                    modelMap.put("success", false);
+                    modelMap.put("errMsg", se.getStateInfo());
+                }
+            } catch (RuntimeException e) {
+                modelMap.put("success", false);
+                modelMap.put("errMsg", e.toString());
+            }
+            return modelMap;
+
+        } else {
+            modelMap.put("success", false);
+            modelMap.put("errMsg", "shopId不能为空");
+        }
+        //3.返回结果
 
         return modelMap;
     }

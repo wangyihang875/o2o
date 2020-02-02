@@ -13,10 +13,9 @@ public class FileUtil {
 
 	public static String getImgBasePath() {
 		String os = System.getProperty("os.name");
-		System.out.println("os="+os);
 		String basePath = "";
 		if (os.toLowerCase().startsWith("win")) {
-			basePath = "D:/projectdev/images/";
+			basePath = "D:/projectdev/com.bushengxin.o2o/images/";
 		}else if(os.toLowerCase().startsWith("mac")){
 			basePath = "/Users/wangyihang/Pictures/com.bushengxin.o2o/images";
 		} else {
@@ -61,6 +60,12 @@ public class FileUtil {
 		return nowTimeStr + rannum;
 	}
 
+	/*
+	* storePath是文件的路径还是目录的路径，
+	* 如果storePath是文件路径则删除该文件，
+	* 如果storePath是目录路径则删除该目录及其下面的所有文件。
+	* @param storePath
+	* */
 	public static void deleteFile(String storePath) {
 		File file = new File(getImgBasePath() + storePath);
 		if (file.exists()) {

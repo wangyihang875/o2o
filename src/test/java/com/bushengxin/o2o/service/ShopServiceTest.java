@@ -41,7 +41,6 @@ public class ShopServiceTest extends BaseTest {
         shop.setOwner(owner);
         shop.setArea(area);
         shop.setShopCategory(sc);
-
         shop.setShopName("mytest2");
         shop.setShopDesc("mytest2");
         shop.setShopAddr("testaddr2");
@@ -53,9 +52,8 @@ public class ShopServiceTest extends BaseTest {
         shop.setAdvice("审核中");
         File shopImg = new File("/Users/wangyihang/Pictures/com.bushengxin.o2o/stars.jpg");
         FileItem fileItem = createFileItem(shopImg, "shopImg");
-        CommonsMultipartFile xxCMF = new CommonsMultipartFile(fileItem);
-
-        ShopExecution se = shopService.addShop(shop, xxCMF);
+        CommonsMultipartFile commonsMultipartFile = new CommonsMultipartFile(fileItem);
+        ShopExecution se = shopService.addShop(shop, commonsMultipartFile);
         assertEquals("mytest2", se.getShop().getShopName());
     }
 
@@ -69,14 +67,34 @@ public class ShopServiceTest extends BaseTest {
 //			System.out.println(shop);
 //		}
 //	}
-//
-//	@Ignore
-//	@Test
-//	public void testGetByShopId() throws Exception {
-//		long shopId = 1;
-//		Shop shop = shopService.getByShopId(shopId);
-//		System.out.println(shop);
-//	}
+
+	@Test
+	public void testModifyShop() throws Exception {
+        Shop shop = new Shop();
+        PersonInfo owner = new PersonInfo();
+        Area area = new Area();
+        ShopCategory sc = new ShopCategory();
+        owner.setUserId(2L);
+        area.setAreaId(2L);
+        sc.setShopCategoryId(2L);
+        shop.setShopId(9L);
+        shop.setOwner(owner);
+        shop.setArea(area);
+        shop.setShopCategory(sc);
+        shop.setShopName("小果园");
+        shop.setShopDesc("请你来喝");
+        shop.setShopAddr("23号");
+        shop.setPhone("13909090909");
+        shop.setShopImg("test2");
+        shop.setLastEditTime(new Date());
+        shop.setEnableStatus(ShopStateEnum.CHECK.getState());
+        shop.setAdvice("斤斤计较");
+        File shopImg = new File("/Users/wangyihang/Pictures/com.bushengxin.o2o/tiger.jpg");
+        FileItem fileItem = createFileItem(shopImg, "shopImg");
+        CommonsMultipartFile commonsMultipartFile = new CommonsMultipartFile(fileItem);
+        ShopExecution se = shopService.modifyShop(shop, commonsMultipartFile);
+        assertEquals("小果园", se.getShop().getShopName());
+	}
 
     //把File转化为CommonsMultipartFile
     public FileItem createFileItem(File file, String fieldName) {

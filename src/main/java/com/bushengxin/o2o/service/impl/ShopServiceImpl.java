@@ -4,6 +4,7 @@ import com.bushengxin.o2o.dao.ShopDao;
 import com.bushengxin.o2o.dto.ShopExecution;
 import com.bushengxin.o2o.entity.Shop;
 import com.bushengxin.o2o.enums.ShopStateEnum;
+import com.bushengxin.o2o.exceptions.ShopOperationException;
 import com.bushengxin.o2o.service.ShopService;
 import com.bushengxin.o2o.util.FileUtil;
 import com.bushengxin.o2o.util.ImageUtil;
@@ -22,9 +23,15 @@ public class ShopServiceImpl implements ShopService {
     private ShopDao shopDao;
 
 
+    /**
+     * 使用注解控制事务方法的优点：
+     * 1.开发团队达成一致约定，明确标注事务方法的编程风格
+     * 2.保证事务方法的执行时间尽可能短，不要穿插其他网络操作，RPC/HTTP请求或者剥离到事务方法外部
+     * 3.不是所有的方法都需要事务，如只有一条修改操作，只读操作不需要事务控制
+     */
     @Override
     @Transactional
-    public ShopExecution addShop(Shop shop, CommonsMultipartFile shopImg) {
+    public ShopExecution addShop(Shop shop, CommonsMultipartFile shopImg) throws RuntimeException{
         if (shop == null) {
             return new ShopExecution(ShopStateEnum.NULL_SHOP_INFO);
         }
@@ -65,6 +72,55 @@ public class ShopServiceImpl implements ShopService {
 
         return new ShopExecution(ShopStateEnum.CHECK, shop);
 
+    }
+
+    /**
+     * 查询指定店铺信息
+     *
+     * @param shopId@return Shop shop
+     */
+    @Override
+    public Shop getByShopId(long shopId) {
+        return shopDao.queryByShopId(shopId);
+    }
+
+    /**
+     * 更新店铺信息（从店家角度）
+     *
+     * @param shop
+     * @param shopImg
+     * @return
+     * @throws RuntimeException
+     */
+    @Override
+    @Transactional
+    public ShopExecution modifyShop(Shop shop, CommonsMultipartFile shopImg) throws RuntimeException {
+        if (shop == null || shop.getShopId() == null) {
+            return new ShopExecution(ShopStateEnum.NULL_SHOPID);
+        } else {
+            try {
+                //1.判断是否需要处理图片
+                if (shopImg != null) {
+                    Shop tempShop = shopDao.queryByShopId(shop.getShopId());
+                    if (tempShop.getShopImg() != null) {
+                        FileUtil.deleteFile(tempShop.getShopImg());//我认为应该在最后删除原图，因为删除图片的操作无法回滚
+                    }
+                    addShopImg(shop, shopImg);
+                }
+                //1.更新店铺信息
+                shop.setLastEditTime(new Date());
+                int effectedNum = shopDao.updateShop(shop);
+                if (effectedNum <= 0) {
+                    return new ShopExecution(ShopStateEnum.INNER_ERROR);
+                } else {
+                    // 创建成功
+                    shop = shopDao.queryByShopId(shop.getShopId());
+                    return new ShopExecution(ShopStateEnum.SUCCESS, shop);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("modifyShop error: " + e.getMessage());
+            }
+        }
     }
 
     private void addShopImg(Shop shop, CommonsMultipartFile shopImg) {
