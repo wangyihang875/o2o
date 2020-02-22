@@ -5,13 +5,14 @@ import com.bushengxin.o2o.entity.Area;
 import com.bushengxin.o2o.entity.PersonInfo;
 import com.bushengxin.o2o.entity.Shop;
 import com.bushengxin.o2o.entity.ShopCategory;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.omg.CORBA.OBJ_ADAPTER;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Date;
-import java.util.Map;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -64,5 +65,21 @@ public class ShopDaoTest extends BaseTest {
 		System.out.println("ownerId:"+shop.getOwner().getUserId());
 		System.out.println("ownerName:"+shop.getOwner().getName());
 
+	}
+
+	@Test
+	public void testQueryShopList() throws JsonProcessingException {
+		Shop shopCondition = new Shop();
+		PersonInfo owner = new PersonInfo();
+		owner.setUserId(2L);
+		shopCondition.setOwner(owner);
+
+		List<Shop> shopList = shopDao.queryShopList(shopCondition,0,100);
+
+		ObjectMapper mapper = new ObjectMapper();
+		String shopListJson = mapper.writeValueAsString(shopList);
+		System.out.println("shopList:"+shopListJson);
+		int total = shopDao.queryShopCount(shopCondition);
+		System.out.println("total:"+total);
 	}
 }

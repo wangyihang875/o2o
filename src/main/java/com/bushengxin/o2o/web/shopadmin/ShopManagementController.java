@@ -1,12 +1,12 @@
 package com.bushengxin.o2o.web.shopadmin;
 
+import com.bushengxin.o2o.dto.Result;
 import com.bushengxin.o2o.dto.ShopExecution;
-import com.bushengxin.o2o.entity.Area;
-import com.bushengxin.o2o.entity.PersonInfo;
-import com.bushengxin.o2o.entity.Shop;
-import com.bushengxin.o2o.entity.ShopCategory;
+import com.bushengxin.o2o.entity.*;
+import com.bushengxin.o2o.enums.ProductCategoryStateEnum;
 import com.bushengxin.o2o.enums.ShopStateEnum;
 import com.bushengxin.o2o.service.AreaService;
+import com.bushengxin.o2o.service.ProductCategoryService;
 import com.bushengxin.o2o.service.ShopCategoryService;
 import com.bushengxin.o2o.service.ShopService;
 import com.bushengxin.o2o.util.CodeUtil;
@@ -14,6 +14,7 @@ import com.bushengxin.o2o.util.HttpServletRequestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -37,12 +38,14 @@ class ShopManagementController {
     private ShopCategoryService shopCategoryService;
     @Autowired
     private AreaService areaService;
+    @Autowired
+    private ProductCategoryService productCategoryService;
 
-    @RequestMapping(value = "registershop",method = RequestMethod.POST)
+    @RequestMapping(value = "registershop", method = RequestMethod.POST)
     @ResponseBody
-    private Map<String, Object> registerShop(HttpServletRequest request){
-        Map<String,Object> modelMap = new HashMap<String,Object>();
-        String shopStr = HttpServletRequestUtil.getString(request,"shopStr");
+    private Map<String, Object> registerShop(HttpServletRequest request) {
+        Map<String, Object> modelMap = new HashMap<String, Object>();
+        String shopStr = HttpServletRequestUtil.getString(request, "shopStr");
         if (!CodeUtil.checkVerifyCode(request)) {
             modelMap.put("success", false);
             modelMap.put("errMsg", "验证码错误");
@@ -52,11 +55,17 @@ class ShopManagementController {
         //1.接收并转化相应的参数，包括店铺信息以及图片信息
         ObjectMapper mapper = new ObjectMapper();
         Shop shop = null;
-        try{
-            shop = mapper.readValue(shopStr,Shop.class);
-        }catch (Exception e){
-            modelMap.put("success",false);
-            modelMap.put("errMsg",e.getMessage());
+        try {
+            shop = mapper.readValue(shopStr, Shop.class);
+        } catch (Exception e) {
+            modelMap.put("success", false);
+            modelMap.put("errMsg", "添加店铺失败");
+            return modelMap;
+        }
+
+        if (StringUtils.isEmpty(shop.getShopName())) {
+            modelMap.put("success", false);
+            modelMap.put("errMsg", "店铺名不能为空");
             return modelMap;
         }
 
@@ -83,7 +92,9 @@ class ShopManagementController {
                  * */
 
                 //登录时将用户信息写入session
-                PersonInfo owner = (PersonInfo) request.getSession().getAttribute("user");
+//                PersonInfo owner = (PersonInfo) request.getSession().getAttribute("user");
+                PersonInfo owner = new PersonInfo();
+                owner.setUserId(2L);
                 shop.setOwner(owner);
                 ShopExecution se = shopService.addShop(shop, shopImg);
                 if (se.getState() == ShopStateEnum.CHECK.getState()) {
@@ -105,7 +116,7 @@ class ShopManagementController {
                 }
             } catch (RuntimeException e) {
                 modelMap.put("success", false);
-                modelMap.put("errMsg", e.toString());
+                modelMap.put("errMsg", "添加店铺失败");
                 return modelMap;
             }
 
@@ -118,56 +129,108 @@ class ShopManagementController {
         return modelMap;
     }
 
-
-    @RequestMapping(value = "/getshopinitinfo",method = RequestMethod.GET)
+    /*
+     * 根据用户信息返回该用户的店铺列表
+     * */
+    @RequestMapping(value = "/getshoplist", method = RequestMethod.GET)
     @ResponseBody
-    private Map<String,Object> getShopInitInfo(){
-        Map<String,Object> modelMap = new HashMap<String,Object>();
+    private Map<String, Object> getShopList(HttpServletRequest request) {
+        Map<String, Object> modelMap = new HashMap<String, Object>();
+        PersonInfo user = new PersonInfo();
+        user.setUserId(2L);
+        user.setName("基基");
+        request.getSession().setAttribute("user", user);
+        user = (PersonInfo) request.getSession().getAttribute("user");
+        try {
+            Shop shopCondition = new Shop();
+            shopCondition.setOwner(user);
+            ShopExecution se = shopService.getShopList(shopCondition, 0, 100);
+            modelMap.put("shopList", se.getShopList());
+            modelMap.put("user", user);
+            modelMap.put("success", true);
+        } catch (Exception e) {
+            modelMap.put("success", false);
+            modelMap.put("errMsg", "获取店铺列表失败");
+        }
+
+        return modelMap;
+    }
+
+    @RequestMapping(value = "/getshopmanagementinfo", method = RequestMethod.GET)
+    @ResponseBody
+    private Map<String, Object> getShopManagementInfo(HttpServletRequest request) {
+        Map<String, Object> modelMap = new HashMap<String, Object>();
+        long shopId = HttpServletRequestUtil.getLong(request, "shopId");
+        if (shopId < 0) {
+            Object currentShopObj = request.getSession().getAttribute("currentShop");
+            if (currentShopObj == null) {
+                //如果不经过登录，也不是从列表中跳转而来，说明你是违规操作，不能直接访问该页面，就重定向到列表页面。
+                modelMap.put("redirect", true);
+                modelMap.put("url", "/o2o/shop/shoplist");
+            } else {
+                Shop currentShop = (Shop) currentShopObj;
+                modelMap.put("redirect", false);
+                modelMap.put("shopId", currentShop.getShopId());
+            }
+        } else {
+            Shop currentShop = new Shop();
+            currentShop.setShopId(shopId);
+            request.getSession().setAttribute("currentShop", currentShop);
+            modelMap.put("redirect", false);
+            modelMap.put("shopId", shopId);
+        }
+        return modelMap;
+    }
+
+    @RequestMapping(value = "/getshopinitinfo", method = RequestMethod.GET)
+    @ResponseBody
+    private Map<String, Object> getShopInitInfo() {
+        Map<String, Object> modelMap = new HashMap<String, Object>();
         List<ShopCategory> shopCategoryList = new ArrayList<ShopCategory>();
         List<Area> areaList = new ArrayList<Area>();
 
-        try{
+        try {
             shopCategoryList = shopCategoryService.getShopCategoryList(new ShopCategory());
             areaList = areaService.getAreaList();
-            modelMap.put("shopCategoryList",shopCategoryList);
-            modelMap.put("areaList",areaList);
-            modelMap.put("success",true);
-        }catch (Exception e){
-            modelMap.put("success",false);
-            modelMap.put("errMsg",e.getMessage());
+            modelMap.put("shopCategoryList", shopCategoryList);
+            modelMap.put("areaList", areaList);
+            modelMap.put("success", true);
+        } catch (Exception e) {
+            modelMap.put("success", false);
+            modelMap.put("errMsg", e.getMessage());
         }
         return modelMap;
     }
 
-    @RequestMapping(value = "/getshopbyid",method = RequestMethod.GET)
+    @RequestMapping(value = "/getshopbyid", method = RequestMethod.GET)
     @ResponseBody
-    private Map<String,Object> getShopById(HttpServletRequest request){
-        Map<String,Object> modelMap = new HashMap<String,Object>();
-        Long shopId = HttpServletRequestUtil.getLong(request,"shopId");
+    private Map<String, Object> getShopById(HttpServletRequest request) {
+        Map<String, Object> modelMap = new HashMap<String, Object>();
+        Long shopId = HttpServletRequestUtil.getLong(request, "shopId");
         Shop shop = null;
         try {
-            if(shopId > -1){
+            if (shopId > -1) {
                 shop = shopService.getByShopId(shopId);
                 List<Area> areaList = areaService.getAreaList();
-                modelMap.put("shop",shop);
-                modelMap.put("areaList",areaList);
-                modelMap.put("success",true);
-            }else{
-                modelMap.put("success",false);
-                modelMap.put("errMsg","shopId不能为空");
+                modelMap.put("shop", shop);
+                modelMap.put("areaList", areaList);
+                modelMap.put("success", true);
+            } else {
+                modelMap.put("success", false);
+                modelMap.put("errMsg", "shopId不能为空");
             }
-        }catch (Exception e){
-            modelMap.put("success",false);
-            modelMap.put("errMsg",e.getMessage());
+        } catch (Exception e) {
+            modelMap.put("success", false);
+            modelMap.put("errMsg", e.getMessage());
         }
         return modelMap;
     }
 
-    @RequestMapping(value = "modifyshop",method = RequestMethod.POST)
+    @RequestMapping(value = "modifyshop", method = RequestMethod.POST)
     @ResponseBody
-    private Map<String, Object> modifyShop(HttpServletRequest request){
-        Map<String,Object> modelMap = new HashMap<String,Object>();
-        String shopStr = HttpServletRequestUtil.getString(request,"shopStr");
+    private Map<String, Object> modifyShop(HttpServletRequest request) {
+        Map<String, Object> modelMap = new HashMap<String, Object>();
+        String shopStr = HttpServletRequestUtil.getString(request, "shopStr");
         if (!CodeUtil.checkVerifyCode(request)) {
             modelMap.put("success", false);
             modelMap.put("errMsg", "验证码错误");
@@ -177,11 +240,11 @@ class ShopManagementController {
         //1.接收并转化相应的参数，包括店铺信息以及图片信息
         ObjectMapper mapper = new ObjectMapper();
         Shop shop = null;
-        try{
-            shop = mapper.readValue(shopStr,Shop.class);
-        }catch (Exception e){
-            modelMap.put("success",false);
-            modelMap.put("errMsg",e.getMessage());
+        try {
+            shop = mapper.readValue(shopStr, Shop.class);
+        } catch (Exception e) {
+            modelMap.put("success", false);
+            modelMap.put("errMsg", e.getMessage());
             return modelMap;
         }
 
@@ -229,4 +292,6 @@ class ShopManagementController {
 
         return modelMap;
     }
+
+
 }

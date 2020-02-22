@@ -37,4 +37,14 @@ public interface ShopService {
 	 */
 	ShopExecution modifyShop(Shop shop, CommonsMultipartFile shopImg) throws RuntimeException;
 
+	/**
+	 * 根据shopCondition分页返回相应数据
+	 *
+	 * @param Shop shopCondition
+	 * @paramint int pageIndex
+	 * @paramint int pageSize
+	 * @return ShopExecution
+	 */
+	ShopExecution getShopList(Shop shopCondition,int pageIndex,int pageSize);
+
 }

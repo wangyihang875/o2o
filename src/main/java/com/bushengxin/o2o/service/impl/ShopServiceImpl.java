@@ -8,6 +8,10 @@ import com.bushengxin.o2o.exceptions.ShopOperationException;
 import com.bushengxin.o2o.service.ShopService;
 import com.bushengxin.o2o.util.FileUtil;
 import com.bushengxin.o2o.util.ImageUtil;
+import com.bushengxin.o2o.util.PageCalculator;
+import com.bushengxin.o2o.web.superadmin.AreaController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,9 +19,11 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import java.io.File;
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class ShopServiceImpl implements ShopService {
+    Logger logger = LoggerFactory.getLogger(ShopServiceImpl.class);
 
     @Autowired
     private ShopDao shopDao;
@@ -31,7 +37,7 @@ public class ShopServiceImpl implements ShopService {
      */
     @Override
     @Transactional
-    public ShopExecution addShop(Shop shop, CommonsMultipartFile shopImg) throws RuntimeException{
+    public ShopExecution addShop(Shop shop, CommonsMultipartFile shopImg) throws RuntimeException {
         if (shop == null) {
             return new ShopExecution(ShopStateEnum.NULL_SHOP_INFO);
         }
@@ -63,10 +69,12 @@ public class ShopServiceImpl implements ShopService {
                         }
                     }
                 } catch (Exception e) {
+                    e.printStackTrace();
                     throw new RuntimeException("创建图片地址失败: " + e.getMessage());
                 }
             }
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException("insertShop error: " + e.getMessage());
         }
 
@@ -118,9 +126,35 @@ public class ShopServiceImpl implements ShopService {
                     return new ShopExecution(ShopStateEnum.SUCCESS, shop);
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 throw new RuntimeException("modifyShop error: " + e.getMessage());
             }
         }
+    }
+
+    /**
+     * 根据shopCondition分页返回相应数据
+     *
+     * @param shopCondition
+     * @param pageIndex
+     * @param pageSize
+     * @return ShopExecution
+     * @paramint int pageIndex
+     * @paramint int pageSize
+     */
+    @Override
+    public ShopExecution getShopList(Shop shopCondition, int pageIndex, int pageSize) {
+        int rowIndex = PageCalculator.calculateRowIndex(pageIndex, pageSize);
+        List<Shop> shopList = shopDao.queryShopList(shopCondition, rowIndex, pageSize);
+        int count = shopDao.queryShopCount(shopCondition);
+        ShopExecution se = new ShopExecution();
+        if (shopList != null) {
+            se.setShopList(shopList);
+            se.setCount(count);
+        } else {
+            se.setState(ShopStateEnum.INNER_ERROR.getState());
+        }
+        return se;
     }
 
     private void addShopImg(Shop shop, CommonsMultipartFile shopImg) {
