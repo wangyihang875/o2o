@@ -2,6 +2,7 @@ package com.bushengxin.o2o.service.impl;
 
 import com.bushengxin.o2o.dao.ShopDao;
 import com.bushengxin.o2o.dto.ShopExecution;
+import com.bushengxin.o2o.entity.PersonInfo;
 import com.bushengxin.o2o.entity.Shop;
 import com.bushengxin.o2o.enums.ShopStateEnum;
 import com.bushengxin.o2o.exceptions.ShopOperationException;
@@ -88,7 +89,7 @@ public class ShopServiceImpl implements ShopService {
      * @param shopId@return Shop shop
      */
     @Override
-    public Shop getByShopId(long shopId) {
+    public Shop getShopById(long shopId) {
         return shopDao.queryByShopId(shopId);
     }
 
@@ -156,6 +157,29 @@ public class ShopServiceImpl implements ShopService {
         }
         return se;
     }
+
+    /**
+     * 查询该用户下面的店铺信息
+     *
+     * @param employeeId@return List<Shop>
+     * @throws Exception
+     */
+    @Override
+    public ShopExecution getShopByEmployeeId(long employeeId) throws RuntimeException {
+        Shop shopCondition = new Shop();
+        PersonInfo owner = new PersonInfo();
+        owner.setUserId(employeeId);
+        shopCondition.setOwner(owner);
+        List<Shop> shopList = shopDao.queryShopList(shopCondition, 0, 100);
+        ShopExecution se = new ShopExecution();
+        if (shopList != null) {
+            se.setShopList(shopList);
+        } else {
+            se.setState(ShopStateEnum.INNER_ERROR.getState());
+        }
+        return se;
+    }
+
 
     private void addShopImg(Shop shop, CommonsMultipartFile shopImg) {
         String dest = FileUtil.getShopImagePath(shop.getShopId());

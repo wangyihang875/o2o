@@ -7,7 +7,7 @@
     http://www.springframework.org/schema/context
     http://www.springframework.org/schema/context/spring-context.xsd">
 	<!-- 配置整合mybatis过程 -->
-	<!-- 1.配置数据库相关参数properties的属性：${url} -->
+	<!-- 1.配置数据库相关参数properties的属性：${url} 对username和password进行加密，由于考虑到密钥保存在项目中也是不安全的行为，所以暂时不使用-->
 <!--	<bean class="com.bushengxin.o2o.util.EncryptPropertyPlaceholderConfigurer">-->
 <!--		<property name="locations">-->
 <!--			<list>-->

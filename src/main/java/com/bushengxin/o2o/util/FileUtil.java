@@ -26,7 +26,7 @@ public class FileUtil {
 		}else if(os.toLowerCase().startsWith("mac")){
 			basePath = "/Users/wangyihang/Pictures/com.bushengxin.o2o/images";
 		} else {
-			basePath = "/home/com.bushengxin.o2o/images";
+			basePath = "/data/com.bushengxin.o2o/images";
 		}
 		basePath = basePath.replace("/", seperator);
 		return basePath;

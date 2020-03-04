@@ -8,16 +8,16 @@ import java.util.List;
 public interface ProductCategoryDao {
 
     /*
-    * 根据shopId查询产品分类
-    * @param shopId
-    * @return List<ProductCategory>
+     * 根据shopId查询产品分类
+     * @param shopId
+     * @return List<ProductCategory>
      * */
     List<ProductCategory> queryProductCategory(long shopId);
 
     /**
      * 批量新增商品类别
      *
-     * @param ProductCategory productCategory
+     * @param productCategoryList
      * @return effectedNum
      */
     int batchInsertProductCategory(List<ProductCategory> productCategoryList);
@@ -29,5 +29,5 @@ public interface ProductCategoryDao {
      * @param shopId
      * @return effectedNum
      */
-    int deleteProductCategory(@Param("productCategoryId") long productCategoryId,@Param("shopId") long shopId);
+    int deleteProductCategory(@Param("productCategoryId") long productCategoryId, @Param("shopId") long shopId);
 }

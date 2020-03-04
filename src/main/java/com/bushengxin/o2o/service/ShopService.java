@@ -19,10 +19,10 @@ public interface ShopService {
 	/**
 	 * 查询指定店铺信息
 	 *
-	 * @param long shopId
+	 * @param shopId
 	 * @return Shop shop
 	 */
-	Shop getByShopId(long shopId);
+	Shop getShopById(long shopId);
 
 	/**
 	 * 更新店铺信息（从店家角度）
@@ -46,5 +46,14 @@ public interface ShopService {
 	 * @return ShopExecution
 	 */
 	ShopExecution getShopList(Shop shopCondition,int pageIndex,int pageSize);
+
+	/**
+	 * 查询该用户下面的店铺信息
+	 *
+	 * @param long employyeeId
+	 * @return List<Shop>
+	 * @throws Exception
+	 */
+	ShopExecution getShopByEmployeeId(long employeeId) throws RuntimeException;
 
 }

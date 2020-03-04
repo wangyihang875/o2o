@@ -14,8 +14,7 @@
         <result column="create_time" property="createTime" />
         <result column="last_edit_time" property="lastEditTime" />
         <result column="enable_status" property="enableStatus" />
-        <association property="productCategory" column="product_category_id"
-                     javaType="com.bushengxin.o2o.entity.ProductCategory">
+        <association property="productCategory" column="product_category_id" javaType="com.bushengxin.o2o.entity.ProductCategory">
             <id column="product_category_id" property="productCategoryId" />
             <result column="product_category_name" property="productCategoryName" />
             <result column="product_category_desc" property="productCategoryDesc" />
@@ -23,8 +22,7 @@
             <result column="create_time" property="createTime" />
             <result column="last_edit_time" property="lastEditTime" />
         </association>
-        <association property="shop" column="shop_id"
-                     javaType="com.bushengxin.o2o.entity.Shop">
+        <association property="shop" column="shop_id" javaType="com.bushengxin.o2o.entity.Shop">
             <id column="shop_id" property="shopId" />
             <result column="shop_name" property="shopName" />
             <result column="shop_desc" property="shopDesc" />
@@ -40,8 +38,7 @@
                 <result column="name" property="name"/>
             </association>
         </association>
-        <collection property="productImgList" column="product_id"
-                    ofType="com.bushengxin.o2o.entity.ProductImg">
+        <collection property="productImgList" column="product_id" ofType="com.bushengxin.o2o.entity.ProductImg">
             <id column="product_img_id" property="productImgId" />
             <result column="img_addr" property="imgAddr" />
             <result column="img_desc" property="imgDesc" />

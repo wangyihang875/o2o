@@ -210,7 +210,7 @@ class ShopManagementController {
         Shop shop = null;
         try {
             if (shopId > -1) {
-                shop = shopService.getByShopId(shopId);
+                shop = shopService.getShopById(shopId);
                 List<Area> areaList = areaService.getAreaList();
                 modelMap.put("shop", shop);
                 modelMap.put("areaList", areaList);
